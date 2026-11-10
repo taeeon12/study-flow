@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스터디 플로우 (Study Flow)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter & Noto Sans KR) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans KR', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            500: '#64748b',
+                            600: '#475569',
+                            900: '#0f172a',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 25px rgba(59, 130, 246, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Smooth transitions & subtle custom styles */
+        body {
+            background-color: #fafafa;
+            color: #1e293b;
+        }
+        .timer-ring {
+            transition: stroke-dashoffset 0.3s ease;
+        }
+        /* Custom scrollbar for log section */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased text-slate-800 bg-slate-50">
+
+    <!-- Header Navigation -->
+    <header class="w-full bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                    S
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">스터디 플로우</h1>
+                    <p class="text-xs text-slate-400 font-medium">Study Flow</p>
+                </div>
+            </div>
+            
+            <!-- Quick Info / Motivational Badge -->
+            <div id="quote-badge" class="hidden md:flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs text-slate-600">
+                <i class="fa-solid fa-sparkles text-amber-500"></i>
+                <span id="quote-text">나만의 속도로 차근차근 걸어가요.</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-8 flex flex-col gap-8">
+        
+        <!-- Encouragement Banner (Ethical Element: Friendly Encouragement) -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-soft flex items-center justify-between transition-all">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-regular fa-face-smile"></i>
+                </div>
+                <div>
+                    <h2 id="greeting-title" class="text-base font-semibold text-slate-800">오늘도 준비되었나요?</h2>
+                    <p id="encouraging-message" class="text-sm text-slate-500 mt-0.5">남들과 비교하지 말고, 오늘 할 수 있는 만큼만 집중해봐요.</p>
+                </div>
+            </div>
+            <button onclick="changeEncouragementMessage()" class="text-xs text-slate-400 hover:text-slate-600 p-2 transition-colors" title="새로운 응원 보기">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+        </div>
+
+        <!-- Mode Toggle & Subject Input -->
+        <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-soft flex flex-col items-center">
+            
+            <!-- Mode Switcher -->
+            <div class="inline-flex p-1 bg-slate-100 rounded-2xl mb-6">
+                <button id="mode-stopwatch" onclick="switchMode('stopwatch')" class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm bg-white text-slate-900">
+                    <i class="fa-solid fa-stopwatch mr-1.5"></i> 스톱워치
+                </button>
+                <button id="mode-pomodoro" onclick="switchMode('pomodoro')" class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-500 hover:text-slate-800">
+                    <i class="fa-solid fa-hourglass-half mr-1.5"></i> 포모도로 (25분)
+                </button>
+            </div>
+
+            <!-- Subject / Goal Input -->
+            <div class="w-full max-w-md mb-8">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-book-bookmark absolute left-4 text-slate-400"></i>
+                    <input type="text" id="subject-input" placeholder="무엇을 공부할 예정인가요? (예: 수학 문제집)" 
+                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all text-slate-800 placeholder-slate-400">
+                </div>
+            </div>
+
+            <!-- Main Timer Display (SVG Circle Progress) -->
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-2">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <!-- Background Circle -->
+                    <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="4" class="text-slate-100" fill="transparent" />
+                    <!-- Progress Circle -->
+                    <circle id="progress-circle" cx="50" cy="50" r="44" stroke="currentColor" stroke-width="4" 
+                        class="text-slate-900 stroke-current timer-ring" 
+                        fill="transparent" 
+                        stroke-dasharray="276.46" 
+                        stroke-dashoffset="0" 
+                        stroke-linecap="round" />
+                </svg>
+                
+                <!-- Time Text Inside Circle -->
+                <div class="absolute flex flex-col items-center justify-center text-center">
+                    <span id="timer-display" class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 font-mono">
+                        00:00:00
+                    </span>
+                    <span id="timer-status" class="text-xs font-medium text-slate-400 mt-2 tracking-widest uppercase">
+                        준비됨
+                    </span>
+                </div>
+            </div>
+
+            <!-- Timer Control Buttons -->
+            <div class="flex items-center space-x-4 mt-8">
+                <!-- Reset Button -->
+                <button id="btn-reset" onclick="resetTimer()" class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center transition-all focus:outline-none">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+
+                <!-- Main Start/Pause Button -->
+                <button id="btn-toggle" onclick="toggleTimer()" class="px-8 py-3.5 rounded-2xl bg-slate-900 text-white font-semibold shadow-lg shadow-slate-900/10 hover:bg-slate-800 hover:shadow-slate-900/20 active:scale-95 transition-all flex items-center space-x-2 text-base">
+                    <i id="btn-toggle-icon" class="fa-solid fa-play"></i>
+                    <span id="btn-toggle-text">공부 시작</span>
+                </button>
+
+                <!-- Save Record Button -->
+                <button id="btn-save" onclick="saveCurrentSession()" class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-all focus:outline-none" title="현재 기록 저장">
+                    <i class="fa-solid fa-check"></i>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Dashboard & Stats Area -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Summary Stats Card -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-soft flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-400 tracking-wider uppercase mb-4">오늘의 누적 공부</h3>
+                    <div class="flex items-baseline space-x-1">
+                        <span id="total-today-time" class="text-3xl font-bold text-slate-900 font-mono">0</span>
+                        <span class="text-sm font-medium text-slate-500">분</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">꾸준함이 가장 큰 무기예요.</p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                    <span>완료한 세션</span>
+                    <span id="total-sessions-count" class="font-bold text-slate-700">0회</span>
+                </div>
+            </div>
+
+            <!-- Today's Logs (Core Feature) -->
+            <div class="md:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 shadow-soft flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-semibold text-slate-400 tracking-wider uppercase">오늘 공부한 기록</h3>
+                    <button onclick="clearLogs()" class="text-xs text-slate-400 hover:text-rose-500 transition-colors">
+                        기록 전체 삭제
+                    </button>
+                </div>
+
+                <!-- Log List Container -->
+                <div id="log-list" class="flex-1 max-h-48 overflow-y-auto space-y-2 pr-1">
+                    <!-- Empty State Placeholder -->
+                    <div id="empty-log-state" class="h-32 flex flex-col items-center justify-center text-slate-300">
+                        <i class="fa-regular fa-clipboard text-3xl mb-2"></i>
+                        <p class="text-xs">아직 기록된 공부 시간이 없습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Custom Break Reminder Modal (Ethical Element: Rest & Mental Health Focus) -->
+    <div id="break-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-xl transform transition-all scale-95 opacity-0" id="break-modal-card">
+            <div class="w-14 h-14 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-mug-hot"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">수고하셨어요! 잠시 쉬어가세요</h3>
+            <p class="text-sm text-slate-500 mb-6 leading-relaxed">
+                25분간 깊게 집중하셨네요.<br>눈을 감고 스트레칭을 하거나 물 한 잔 마셔보는 건 어떨까요?
+            </p>
+            <div class="flex space-x-3">
+                <button onclick="closeBreakModal()" class="w-full py-3 bg-slate-900 text-white font-medium text-sm rounded-xl hover:bg-slate-800 transition-all">
+                    네, 휴식할게요
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification System -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white text-sm px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-message">기록이 성공적으로 저장되었습니다.</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full border-t border-slate-100 bg-white py-6 mt-12">
+        <div class="max-w-4xl mx-auto px-4 text-center text-xs text-slate-400">
+            <p>스터디 플로우 — 과도한 경쟁 없이, 나만의 순수한 성장을 지원합니다.</p>
+        </div>
+    </footer>
+
+    <!-- Application Logic Javascript -->
+    <script>
+        // State Variables
+        let timerMode = 'stopwatch'; // 'stopwatch' or 'pomodoro'
+        let timerInterval = null;
+        let isRunning = false;
+        let secondsElapsed = 0;
+        let pomodoroTotalSeconds = 25 * 60; // 25 min standard
+        let pomodoroRemainingSeconds = 25 * 60;
+
+        // Data Storage
+        let logs = JSON.parse(localStorage.getItem('study_flow_logs')) || [];
+
+        // Motivational Encouragements (Friendly & Ethical)
+        const encouragements = [
+            "남들과 비교하지 말고, 오늘 할 수 있는 만큼만 집중해봐요.",
+            "작은 노력이 모여 커다란 결실을 만듭니다.",
+            "지칠 땐 언제든 쉬어가도 괜찮아요. 휴식도 공부의 일부입니다.",
+            "집중하는 당신의 모습이 정말 멋집니다!",
+            "완벽하지 않아도 돼요. 꾸준함이 가장 강력합니다."
+        ];
+
+        // Elements Reference
+        const timerDisplay = document.getElementById('timer-display');
+        const timerStatus = document.getElementById('timer-status');
+        const progressCircle = document.getElementById('progress-circle');
+        const btnToggle = document.getElementById('btn-toggle');
+        const btnToggleIcon = document.getElementById('btn-toggle-icon');
+        const btnToggleText = document.getElementById('btn-toggle-text');
+        const subjectInput = document.getElementById('subject-input');
+        const logList = document.getElementById('log-list');
+        const emptyLogState = document.getElementById('empty-log-state');
+        const totalTodayTimeEl = document.getElementById('total-today-time');
+        const totalSessionsCountEl = document.getElementById('total-sessions-count');
+
+        // Circumference for Progress Circle (2 * PI * 44)
+        const CIRCUMFERENCE = 2 * Math.PI * 44;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            updateDisplay();
+            renderLogs();
+            updateStats();
+        });
+
+        // Mode Switching
+        function switchMode(mode) {
+            if (isRunning) {
+                showToast('타이머가 동작 중일 때는 모드를 변경할 수 없습니다.', 'fa-triangle-exclamation text-amber-400');
+                return;
+            }
+            timerMode = mode;
+            const btnStopwatch = document.getElementById('mode-stopwatch');
+            const btnPomodoro = document.getElementById('mode-pomodoro');
+
+            if (mode === 'stopwatch') {
+                btnStopwatch.className = "px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm bg-white text-slate-900";
+                btnPomodoro.className = "px-5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-500 hover:text-slate-800";
+            } else {
+                btnPomodoro.className = "px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm bg-white text-slate-900";
+                btnStopwatch.className = "px-5 py-2.5 rounded-xl text-sm font-semibold transition-all text-slate-500 hover:text-slate-800";
+            }
+            resetTimer();
+        }
+
+        // Toggle Start / Pause
+        function toggleTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            isRunning = true;
+            btnToggleIcon.className = "fa-solid fa-pause";
+            btnToggleText.textContent = "일시 정지";
+            timerStatus.textContent = "집중 중...";
+            timerStatus.className = "text-xs font-semibold text-blue-600 mt-2 tracking-widest uppercase animate-pulse";
+
+            timerInterval = setInterval(() => {
+                if (timerMode === 'stopwatch') {
+                    secondsElapsed++;
+                } else {
+                    if (pomodoroRemainingSeconds > 0) {
+                        pomodoroRemainingSeconds--;
+                    } else {
+                        // Pomodoro Completed
+                        pauseTimer();
+                        triggerPomodoroCompletion();
+                        return;
+                    }
+                }
+                updateDisplay();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            btnToggleIcon.className = "fa-solid fa-play";
+            btnToggleText.textContent = "계속 하기";
+            timerStatus.textContent = "일시 정지됨";
+            timerStatus.className = "text-xs font-medium text-amber-500 mt-2 tracking-widest uppercase";
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            secondsElapsed = 0;
+            pomodoroRemainingSeconds = pomodoroTotalSeconds;
+            btnToggleText.textContent = "공부 시작";
+            timerStatus.textContent = "준비됨";
+            timerStatus.className = "text-xs font-medium text-slate-400 mt-2 tracking-widest uppercase";
+            updateDisplay();
+        }
+
+        // Display Formatter & Circle Progress Updater
+        function updateDisplay() {
+            let totalSec = timerMode === 'stopwatch' ? secondsElapsed : pomodoroRemainingSeconds;
+            
+            const hrs = Math.floor(totalSec / 3600);
+            const mins = Math.floor((totalSec % 3600) / 60);
+            const secs = totalSec % 60;
+
+            const formatted = 
+                (hrs > 0 ? String(hrs).padStart(2, '0') + ':' : '') + 
+                String(mins).padStart(2, '0') + ':' + 
+                String(secs).padStart(2, '0');
+
+            timerDisplay.textContent = formatted;
+
+            // Update Circle Progress
+            let progressRatio = 0;
+            if (timerMode === 'stopwatch') {
+                // Circular progress wraps around every hour
+                progressRatio = (secondsElapsed % 3600) / 3600;
+            } else {
+                progressRatio = (pomodoroTotalSeconds - pomodoroRemainingSeconds) / pomodoroTotalSeconds;
+            }
+
+            const strokeDashoffset = CIRCUMFERENCE * (1 - progressRatio);
+            progressCircle.style.strokeDashoffset = strokeDashoffset;
+        }
+
+        // Save Log Session
+        function saveCurrentSession() {
+            const timeToSave = timerMode === 'stopwatch' ? secondsElapsed : (pomodoroTotalSeconds - pomodoroRemainingSeconds);
+            
+            if (timeToSave < 10) {
+                showToast('10초 이상의 공부 시간만 기록할 수 있습니다.', 'fa-solid fa-circle-info text-amber-400');
+                return;
+            }
+
+            const subject = subjectInput.value.trim() || '일반 공부';
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const newLog = {
+                id: Date.now(),
+                subject: subject,
+                durationSeconds: timeToSave,
+                timeRecorded: timeString,
+                mode: timerMode === 'stopwatch' ? '스톱워치' : '포모도로'
+            };
+
+            logs.unshift(newLog);
+            localStorage.setItem('study_flow_logs', JSON.stringify(logs));
+
+            resetTimer();
+            renderLogs();
+            updateStats();
+            showToast('공부 기록이 저장되었습니다! 👏');
+        }
+
+        // Render Today Logs
+        function renderLogs() {
+            if (logs.length === 0) {
+                emptyLogState.classList.remove('hidden');
+                logList.innerHTML = '';
+                logList.appendChild(emptyLogState);
+                return;
+            }
+
+            emptyLogState.classList.add('hidden');
+            logList.innerHTML = '';
+
+            logs.forEach(log => {
+                const mins = Math.max(1, Math.round(log.durationSeconds / 60));
+                
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/80 rounded-2xl transition-all border border-slate-100";
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 text-xs">
+                            <i class="${log.mode === '포모도로' ? 'fa-solid fa-hourglass-half' : 'fa-solid fa-clock'}"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">${escapeHtml(log.subject)}</p>
+                            <p class="text-xs text-slate-400">${log.timeRecorded} • ${log.mode}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm font-bold text-slate-900 font-mono">+${mins}분</span>
+                        <button onclick="deleteLog(${log.id})" class="text-slate-300 hover:text-rose-500 text-xs p-1 transition-colors">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                logList.appendChild(item);
+            });
+        }
+
+        // Delete Single Log
+        function deleteLog(id) {
+            logs = logs.filter(log => log.id !== id);
+            localStorage.setItem('study_flow_logs', JSON.stringify(logs));
+            renderLogs();
+            updateStats();
+            showToast('기록이 삭제되었습니다.');
+        }
+
+        // Delete All Logs
+        function clearLogs() {
+            if (logs.length === 0) return;
+            logs = [];
+            localStorage.removeItem('study_flow_logs');
+            renderLogs();
+            updateStats();
+            showToast('모든 기록이 초기화되었습니다.');
+        }
+
+        // Calculate and Update Total Stats
+        function updateStats() {
+            const totalSecs = logs.reduce((acc, log) => acc + log.durationSeconds, 0);
+            const totalMins = Math.floor(totalSecs / 60);
+            
+            totalTodayTimeEl.textContent = totalMins;
+            totalSessionsCountEl.textContent = `${logs.length}회`;
+        }
+
+        // Pomodoro Completion Handling
+        function triggerPomodoroCompletion() {
+            saveCurrentSession();
+            openBreakModal();
+        }
+
+        // Modal Controllers
+        function openBreakModal() {
+            const modal = document.getElementById('break-modal');
+            const modalCard = document.getElementById('break-modal-card');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalCard.classList.remove('scale-95', 'opacity-0');
+                modalCard.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeBreakModal() {
+            const modal = document.getElementById('break-modal');
+            const modalCard = document.getElementById('break-modal-card');
+            modalCard.classList.remove('scale-100', 'opacity-100');
+            modalCard.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        // Change Encouragement Message
+        function changeEncouragementMessage() {
+            const messageEl = document.getElementById('encouraging-message');
+            const randomMsg = encouragements[Math.floor(Math.random() * encouragements.length)];
+            messageEl.textContent = randomMsg;
+        }
+
+        // Toast Notification System
+        function showToast(message, iconClass = 'fa-solid fa-circle-check text-emerald-400') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+            toastIcon.className = iconClass;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Utility: XSS Protection
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
